@@ -22,61 +22,195 @@
             margin: 0; 
             overflow: hidden; 
             background: 
-                radial-gradient(circle at 20% 30%, rgba(26, 43, 75, 0.9), transparent 50%),
-                radial-gradient(circle at 80% 70%, rgba(139, 0, 139, 0.4), transparent 50%),
-                radial-gradient(circle at 50% 50%, #0a1020 0%, #050912 70%, #000000 100%);
+                /* Ánh sáng từ cây thông - màu xanh lá và vàng */
+                radial-gradient(ellipse at 50% 40%, rgba(34, 139, 34, 0.15) 0%, transparent 40%),
+                radial-gradient(ellipse at 50% 45%, rgba(0, 100, 0, 0.2) 0%, transparent 35%),
+                /* Ánh sáng Giáng sinh - đỏ và vàng */
+                radial-gradient(circle at 30% 20%, rgba(255, 69, 0, 0.12) 0%, transparent 30%),
+                radial-gradient(circle at 70% 25%, rgba(255, 215, 0, 0.1) 0%, transparent 28%),
+                /* Nền đêm rừng - xanh đậm */
+                radial-gradient(ellipse at center, #0d1b2a 0%, #0a1628 25%, #050a14 50%, #000510 75%, #000000 100%);
             color: #fff;
             font-family: 'Poppins', 'Segoe UI', sans-serif;
             position: relative;
             height: 100vh;
         }
         
-        /* Animated background stars */
+        /* Animated background stars - nhiều sao hơn, đẹp hơn */
         body::after {
             content: "";
             position: fixed;
             inset: 0;
             background-image: 
-                radial-gradient(2px 2px at 20% 30%, rgba(255,255,255,0.8), transparent),
-                radial-gradient(2px 2px at 60% 70%, rgba(255,255,255,0.6), transparent),
-                radial-gradient(1px 1px at 50% 50%, rgba(255,255,255,0.9), transparent),
-                radial-gradient(1px 1px at 80% 10%, rgba(255,255,255,0.7), transparent),
-                radial-gradient(2px 2px at 90% 80%, rgba(255,215,0,0.6), transparent),
-                radial-gradient(1px 1px at 33% 90%, rgba(255,255,255,0.8), transparent);
+                /* Sao lớn - vàng và trắng */
+                radial-gradient(2px 2px at 15% 25%, rgba(255,255,255,0.9), transparent),
+                radial-gradient(2px 2px at 25% 15%, rgba(255,215,0,0.8), transparent),
+                radial-gradient(1.5px 1.5px at 35% 35%, rgba(255,255,255,0.85), transparent),
+                radial-gradient(2px 2px at 45% 20%, rgba(255,215,0,0.7), transparent),
+                radial-gradient(1px 1px at 55% 30%, rgba(255,255,255,0.9), transparent),
+                radial-gradient(1.5px 1.5px at 65% 15%, rgba(255,215,0,0.75), transparent),
+                radial-gradient(2px 2px at 75% 25%, rgba(255,255,255,0.8), transparent),
+                radial-gradient(1px 1px at 85% 35%, rgba(255,215,0,0.7), transparent),
+                /* Sao nhỏ rải rác */
+                radial-gradient(1px 1px at 20% 50%, rgba(255,255,255,0.6), transparent),
+                radial-gradient(1px 1px at 40% 60%, rgba(255,255,255,0.7), transparent),
+                radial-gradient(1px 1px at 60% 70%, rgba(255,255,255,0.65), transparent),
+                radial-gradient(1px 1px at 80% 55%, rgba(255,255,255,0.7), transparent),
+                radial-gradient(1px 1px at 30% 75%, rgba(255,215,0,0.6), transparent),
+                radial-gradient(1px 1px at 50% 80%, rgba(255,255,255,0.65), transparent),
+                radial-gradient(1px 1px at 70% 85%, rgba(255,215,0,0.6), transparent),
+                radial-gradient(1px 1px at 90% 70%, rgba(255,255,255,0.7), transparent),
+                /* Sao ở góc */
+                radial-gradient(1.5px 1.5px at 10% 10%, rgba(255,215,0,0.8), transparent),
+                radial-gradient(1.5px 1.5px at 90% 10%, rgba(255,255,255,0.8), transparent),
+                radial-gradient(1.5px 1.5px at 10% 90%, rgba(255,215,0,0.75), transparent),
+                radial-gradient(1.5px 1.5px at 90% 90%, rgba(255,255,255,0.75), transparent);
             background-size: 200% 200%;
-            animation: twinkle 20s ease-in-out infinite;
+            animation: twinkle 25s ease-in-out infinite;
             pointer-events: none;
             z-index: 1;
-            opacity: 0.6;
+            opacity: 0.8;
         }
         
         @keyframes twinkle {
-            0%, 100% { transform: translate(0, 0) rotate(0deg); opacity: 0.6; }
-            25% { transform: translate(-5%, -3%) rotate(90deg); opacity: 0.8; }
-            50% { transform: translate(-10%, -5%) rotate(180deg); opacity: 0.4; }
-            75% { transform: translate(-5%, -3%) rotate(270deg); opacity: 0.7; }
+            0%, 100% { 
+                transform: translate(0, 0) rotate(0deg) scale(1); 
+                opacity: 0.8; 
+            }
+            25% { 
+                transform: translate(-3%, -2%) rotate(90deg) scale(1.05); 
+                opacity: 1; 
+            }
+            50% { 
+                transform: translate(-6%, -4%) rotate(180deg) scale(0.95); 
+                opacity: 0.6; 
+            }
+            75% { 
+                transform: translate(-3%, -2%) rotate(270deg) scale(1.02); 
+                opacity: 0.9; 
+            }
         }
         
-        /* Soft vignette & twinkle overlay */
+        /* Soft vignette & Christmas glow overlay */
         body::before {
             content: "";
             position: fixed; 
             inset: 0;
             background:
-                radial-gradient(circle at 15% 25%, rgba(255,215,0,0.08), transparent 25%),
-                radial-gradient(circle at 85% 15%, rgba(255,182,193,0.06), transparent 22%),
-                radial-gradient(circle at 75% 75%, rgba(255,255,255,0.04), transparent 28%),
-                radial-gradient(circle at 25% 85%, rgba(255,20,147,0.05), transparent 20%),
-                radial-gradient(ellipse at center, rgba(0,0,0,0.4), transparent 60%);
+                /* Ánh sáng từ cây thông - glow xanh lá */
+                radial-gradient(ellipse at 50% 45%, rgba(50, 205, 50, 0.12) 0%, transparent 40%),
+                /* Ánh sáng đèn Giáng sinh - đỏ và vàng */
+                radial-gradient(circle at 25% 30%, rgba(255, 69, 0, 0.1) 0%, transparent 25%),
+                radial-gradient(circle at 75% 30%, rgba(255, 215, 0, 0.08) 0%, transparent 25%),
+                radial-gradient(circle at 50% 20%, rgba(255, 20, 147, 0.06) 0%, transparent 20%),
+                /* Ánh sáng mềm mại */
+                radial-gradient(circle at 40% 60%, rgba(255, 182, 193, 0.05) 0%, transparent 30%),
+                radial-gradient(circle at 60% 70%, rgba(255, 255, 255, 0.03) 0%, transparent 28%),
+                /* Vignette tối ở góc */
+                radial-gradient(ellipse at center, transparent 0%, rgba(0,0,0,0.3) 50%, rgba(0,0,0,0.6) 100%);
             pointer-events: none;
             z-index: 2;
             mix-blend-mode: screen;
-            animation: glowPulse 8s ease-in-out infinite;
+            animation: glowPulse 10s ease-in-out infinite;
         }
         
         @keyframes glowPulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.7; }
+            0%, 100% { 
+                opacity: 1; 
+                filter: brightness(1);
+            }
+            50% { 
+                opacity: 0.75; 
+                filter: brightness(1.2);
+            }
+        }
+
+        /* Background cho trạng thái EXPLODE - nền rực rỡ với nhiều màu sắc */
+        body.explode-state {
+            background: 
+                /* Ánh sáng vàng rực rỡ từ trung tâm */
+                radial-gradient(ellipse at 50% 50%, rgba(255, 215, 0, 0.25) 0%, transparent 50%),
+                /* Ánh sáng đỏ và cam */
+                radial-gradient(circle at 30% 40%, rgba(255, 69, 0, 0.2) 0%, transparent 35%),
+                radial-gradient(circle at 70% 40%, rgba(255, 0, 0, 0.18) 0%, transparent 35%),
+                /* Ánh sáng xanh và tím */
+                radial-gradient(circle at 40% 50%, rgba(0, 191, 255, 0.15) 0%, transparent 30%),
+                radial-gradient(circle at 60% 50%, rgba(138, 43, 226, 0.15) 0%, transparent 30%),
+                /* Ánh sáng hồng */
+                radial-gradient(circle at 50% 60%, rgba(255, 20, 147, 0.12) 0%, transparent 25%),
+                /* Nền đêm sâu hơn với gradient động */
+                radial-gradient(ellipse at center, #0a0f1a 0%, #050810 20%, #000510 50%, #000000 100%);
+            transition: background 1s ease-in-out;
+        }
+
+        /* Sao sáng hơn khi EXPLODE */
+        body.explode-state::after {
+            opacity: 1;
+            animation: twinkle 15s ease-in-out infinite, explodeTwinkle 3s ease-in-out infinite;
+        }
+
+        @keyframes explodeTwinkle {
+            0%, 100% { 
+                filter: brightness(1) hue-rotate(0deg);
+            }
+            25% { 
+                filter: brightness(1.3) hue-rotate(30deg);
+            }
+            50% { 
+                filter: brightness(1.5) hue-rotate(60deg);
+            }
+            75% { 
+                filter: brightness(1.3) hue-rotate(30deg);
+            }
+        }
+
+        /* Ánh sáng mạnh hơn khi EXPLODE */
+        body.explode-state::before {
+            background:
+                /* Ánh sáng vàng rực rỡ từ trung tâm */
+                radial-gradient(ellipse at 50% 50%, rgba(255, 215, 0, 0.2) 0%, transparent 45%),
+                /* Ánh sáng đỏ và cam mạnh */
+                radial-gradient(circle at 25% 35%, rgba(255, 69, 0, 0.18) 0%, transparent 30%),
+                radial-gradient(circle at 75% 35%, rgba(255, 0, 0, 0.16) 0%, transparent 30%),
+                /* Ánh sáng xanh và tím */
+                radial-gradient(circle at 35% 45%, rgba(0, 191, 255, 0.14) 0%, transparent 28%),
+                radial-gradient(circle at 65% 45%, rgba(138, 43, 226, 0.14) 0%, transparent 28%),
+                /* Ánh sáng hồng */
+                radial-gradient(circle at 50% 55%, rgba(255, 20, 147, 0.12) 0%, transparent 25%),
+                /* Ánh sáng trắng rực rỡ */
+                radial-gradient(circle at 45% 50%, rgba(255, 255, 255, 0.1) 0%, transparent 20%),
+                radial-gradient(circle at 55% 50%, rgba(255, 255, 255, 0.1) 0%, transparent 20%);
+            animation: glowPulse 6s ease-in-out infinite, explodeGlow 4s ease-in-out infinite;
+        }
+
+        @keyframes explodeGlow {
+            0%, 100% { 
+                opacity: 1; 
+                filter: brightness(1) saturate(1);
+            }
+            50% { 
+                opacity: 0.9; 
+                filter: brightness(1.4) saturate(1.3);
+            }
+        }
+
+        /* Đèn Giáng sinh sáng hơn khi EXPLODE */
+        body.explode-state #christmas-lights {
+            opacity: 1;
+        }
+
+        body.explode-state #christmas-lights::before,
+        body.explode-state #christmas-lights::after {
+            animation: lightsBlink 1.5s ease-in-out infinite, explodeLights 2s ease-in-out infinite;
+        }
+
+        @keyframes explodeLights {
+            0%, 100% { 
+                filter: brightness(1) saturate(1);
+            }
+            50% { 
+                filter: brightness(1.5) saturate(1.4);
+            }
         }
         
         #canvas-container { 
@@ -322,10 +456,60 @@
             font-family: 'Courier New', monospace;
             border-radius: 0 0 8px 0;
         }
+
+        /* Christmas Light Effects - Ánh sáng động từ cây thông */
+        #christmas-lights {
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            z-index: 1;
+            opacity: 0.6;
+        }
+
+        #christmas-lights::before,
+        #christmas-lights::after {
+            content: "";
+            position: absolute;
+            width: 100%;
+            height: 100%;
+        }
+
+        #christmas-lights::before {
+            background: 
+                /* Đèn đỏ nhấp nháy */
+                radial-gradient(3px 3px at 30% 35%, rgba(255, 0, 0, 0.8) 0%, transparent 50%),
+                radial-gradient(3px 3px at 50% 30%, rgba(255, 69, 0, 0.7) 0%, transparent 50%),
+                radial-gradient(3px 3px at 70% 35%, rgba(255, 0, 0, 0.8) 0%, transparent 50%),
+                /* Đèn vàng */
+                radial-gradient(2.5px 2.5px at 25% 40%, rgba(255, 215, 0, 0.9) 0%, transparent 50%),
+                radial-gradient(2.5px 2.5px at 75% 40%, rgba(255, 255, 0, 0.8) 0%, transparent 50%),
+                /* Đèn xanh */
+                radial-gradient(2.5px 2.5px at 40% 45%, rgba(0, 255, 127, 0.7) 0%, transparent 50%),
+                radial-gradient(2.5px 2.5px at 60% 45%, rgba(0, 191, 255, 0.7) 0%, transparent 50%);
+            animation: lightsBlink 2s ease-in-out infinite;
+        }
+
+        #christmas-lights::after {
+            background: 
+                /* Đèn hồng và tím */
+                radial-gradient(2px 2px at 35% 38%, rgba(255, 20, 147, 0.8) 0%, transparent 50%),
+                radial-gradient(2px 2px at 65% 38%, rgba(138, 43, 226, 0.7) 0%, transparent 50%),
+                radial-gradient(2px 2px at 45% 42%, rgba(255, 105, 180, 0.8) 0%, transparent 50%),
+                radial-gradient(2px 2px at 55% 42%, rgba(255, 182, 193, 0.7) 0%, transparent 50%);
+            animation: lightsBlink 2.5s ease-in-out infinite 0.5s;
+        }
+
+        @keyframes lightsBlink {
+            0%, 100% { opacity: 0.6; transform: scale(1); }
+            25% { opacity: 1; transform: scale(1.1); }
+            50% { opacity: 0.4; transform: scale(0.9); }
+            75% { opacity: 0.9; transform: scale(1.05); }
+        }
     </style>
 </head>
 <body>
     <div id="error-log"></div>
+    <div id="christmas-lights"></div>
     
     <!-- UI Vandiep -->
     <div id="ui-layer">
@@ -371,8 +555,8 @@
             blueCount: 250,
             silverCount: 200,
             // bellCount: 180,  // REMOVED BELLS
-            explodeRadius: 65,  
-            photoOrbitRadius: 25,
+            explodeRadius: 140,  // Tăng từ 65 lên 140 để phủ gần toàn màn hình
+            photoOrbitRadius: 50,  // Tăng từ 25 lên 50 để ảnh bay xa hơn
             treeHeight: 70,
             treeBaseRadius: 35
         };
@@ -561,7 +745,7 @@
                         -0.12 - Math.random() * 0.12, // rơi chậm hơn
                         (Math.random() - 0.5) * 0.12
                     );
-                    const s = 0.5 + Math.random() * 0.6;
+                    const s = 0.9 + Math.random() * 0.9;
                     p.scale.x = p.scale.y = p.scale.z = s;
                 }
             };
@@ -638,18 +822,22 @@
                 const theta = Math.random() * Math.PI * 2;
                 treeTargets.push(new BABYLON.Vector3(r * Math.cos(theta), y, r * Math.sin(theta)));
 
-                // EXPLODE
+                // EXPLODE - cải thiện phân bố để phủ toàn màn hình
                 const u = Math.random();
                 const v = Math.random();
                 const phi = Math.acos(2 * v - 1);
                 const lam = 2 * Math.PI * u;
-                let radMult = (type === 'gift') ? 1.2 : (type === 'blue' || type === 'silver') ? 1.1 : 1.0;
+                // Tăng multiplier cho một số loại particles để phân bố rộng hơn
+                let radMult = (type === 'gift') ? 1.4 : (type === 'blue' || type === 'silver') ? 1.3 : 1.2;
                 // "bell" removed, so don't check for (type === 'bell')
-                const rad = CONFIG.explodeRadius * Math.cbrt(Math.random()) * radMult;
+                // Sử dụng sqrt thay vì cbrt để phân bố đều hơn trong không gian lớn
+                const rad = CONFIG.explodeRadius * Math.sqrt(Math.random()) * radMult;
+                // Thêm một chút random để phân bố tự nhiên hơn
+                const randomOffset = 0.85 + Math.random() * 0.3;
                 explodeTargets.push(new BABYLON.Vector3(
-                    rad * Math.sin(phi) * Math.cos(lam),
-                    rad * Math.sin(phi) * Math.sin(lam),
-                    rad * Math.cos(phi)
+                    rad * Math.sin(phi) * Math.cos(lam) * randomOffset,
+                    rad * Math.sin(phi) * Math.sin(lam) * randomOffset,
+                    rad * Math.cos(phi) * randomOffset
                 ));
 
                 // HEART
@@ -875,17 +1063,31 @@
                     p.scale.x = p.scale.y = p.scale.z = (i % 3 === 0) ? baseSize : 0.0001;
                 }
             } else {
+                // EXPLODE mode - tăng scale và rotation động
                 group.mesh.scaling.setAll(1);
                 group.mesh.rotation.y += (handRotY - group.mesh.rotation.y) * 0.1;
+                // Scale multiplier cho EXPLODE - làm particles to hơn
+                const explodeScaleMult = 2.2; // Tăng từ 1.0 lên 2.2 để particles to hơn khi explode
                 for(let i=0; i<count; i++) {
                     const p = particles[i];
                     let brightness = 1.0;
-                    if(group.type === 'gold' || group.type === 'red' || group.type === 'blue' || group.type === 'silver') {
-                        brightness = 0.8 + 0.5 * Math.sin(time * 12 + phases[i]);
+                    if(group.type === 'gold') {
+                        brightness = 1.2 + 0.8 * Math.sin(time * 18 + phases[i]) + 0.3 * Math.sin(time * 25 + phases[i] * 1.5);
+                    } else if(group.type === 'red') {
+                        brightness = 1.3 + 0.9 * Math.sin(time * 16 + phases[i]) + 0.2 * Math.sin(time * 22 + phases[i] * 1.3);
+                    } else if(group.type === 'blue') {
+                        brightness = 1.2 + 0.7 * Math.sin(time * 20 + phases[i]) + 0.3 * Math.sin(time * 28 + phases[i] * 1.7);
+                    } else if(group.type === 'silver') {
+                        brightness = 1.3 + 0.8 * Math.sin(time * 22 + phases[i]) + 0.25 * Math.sin(time * 30 + phases[i] * 1.4);
+                    } else if(group.type === 'gift') {
+                        brightness = 1.1 + 0.7 * Math.sin(time * 15 + phases[i]) + 0.2 * Math.sin(time * 24 + phases[i] * 1.6);
                     }
                     /* bell removed from this list: || group.type === 'bell' */
+                    // Clamp brightness để tránh quá sáng (tối đa khoảng 2.5)
+                    brightness = Math.min(brightness, 2.5);
                     p.color = new BABYLON.Color4(baseColor.r * brightness, baseColor.g * brightness, baseColor.b * brightness, 1);
-                    p.scale.x = p.scale.y = p.scale.z = baseSize;
+                    // Tăng scale khi EXPLODE để particles to hơn và dễ nhìn hơn
+                    p.scale.x = p.scale.y = p.scale.z = baseSize * explodeScaleMult;
                 }
             }
 
@@ -893,8 +1095,25 @@
         }
 
         function updateScene(time) {
-            const speed = 0.08;
+            // Slow motion cho EXPLODE để tạo hiệu ứng nghệ thuật
+            const speed = (state === 'EXPLODE') ? 0.03 : 0.08;
             const handRotY = (handX - 0.5) * 4.0;
+
+            // Cập nhật class cho body để thay đổi background
+            if (state === 'EXPLODE') {
+                document.body.classList.add('explode-state');
+            } else {
+                document.body.classList.remove('explode-state');
+            }
+
+            // Zoom out camera khi EXPLODE để nhìn thấy toàn bộ hiệu ứng
+            if (state === 'EXPLODE') {
+                const targetZ = 220; // Zoom out xa hơn từ 150 lên 220
+                camera.position.z = BABYLON.Scalar.Lerp(camera.position.z, targetZ, 0.05);
+            } else {
+                const targetZ = 150; // Về lại vị trí ban đầu
+                camera.position.z = BABYLON.Scalar.Lerp(camera.position.z, targetZ, 0.05);
+            }
 
             updateParticleGroup(groupGold, state, speed, handRotY, time);
             updateParticleGroup(groupRed, state, speed, handRotY, time);
@@ -939,11 +1158,14 @@
                     mesh.position = BABYLON.Vector3.Lerp(mesh.position, new BABYLON.Vector3(x, y, z), 0.1);
                     mesh.lookAt(camera.position);
                     if (z > maxZ) { maxZ = z; bestIdx = i; }
+                    // Tăng scale của photos khi EXPLODE để to hơn và dễ nhìn hơn
+                    const photoScaleMult = 2.5; // Tăng scale multiplier
                     if (z > 5) { 
-                        const ds = 1.0 + (z/CONFIG.photoOrbitRadius)*0.8; 
+                        const ds = (1.0 + (z/CONFIG.photoOrbitRadius)*0.8) * photoScaleMult; 
                         mesh.scaling = BABYLON.Vector3.Lerp(mesh.scaling, new BABYLON.Vector3(ds, ds, ds), 0.1);
                     } else {
-                        mesh.scaling = BABYLON.Vector3.Lerp(mesh.scaling, new BABYLON.Vector3(0.6, 0.6, 0.6), 0.1);
+                        const ds = 0.6 * photoScaleMult;
+                        mesh.scaling = BABYLON.Vector3.Lerp(mesh.scaling, new BABYLON.Vector3(ds, ds, ds), 0.1);
                     }
                 });
                 selectedIndex = bestIdx;
