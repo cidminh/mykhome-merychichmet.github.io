@@ -1,0 +1,822 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Magic Christmas - Final Clean</title>   
+    <script src="https://cdn.babylonjs.com/babylon.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.min.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/control_utils/control_utils.min.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.min.js" crossorigin="anonymous"></script>
+
+    <style>
+        body { 
+            margin: 0; 
+            overflow: hidden; 
+            background: radial-gradient(circle at 20% 20%, #1a2b4b, #0b1022 60%, #050912); 
+            color: #fff;
+            font-family: 'Segoe UI', sans-serif; 
+        }
+        /* Soft vignette & twinkle overlay */
+        body::before {
+            content: "";
+            position: fixed; inset: 0;
+            background:
+                radial-gradient(circle at 10% 20%, rgba(255,255,255,0.05), transparent 20%),
+                radial-gradient(circle at 80% 10%, rgba(255,255,255,0.04), transparent 18%),
+                radial-gradient(circle at 70% 70%, rgba(255,255,255,0.03), transparent 22%),
+                radial-gradient(circle at 30% 80%, rgba(255,255,255,0.04), transparent 18%),
+                radial-gradient(ellipse at center, rgba(0,0,0,0.35), transparent 55%);
+            pointer-events: none;
+            z-index: 1;
+            mix-blend-mode: screen;
+        }
+        #canvas-container { width: 100%; height: 100vh; display: block; position: relative; z-index: 0; }
+        
+        /* UI Center Vandiep */
+        #ui-layer {
+            position: absolute; bottom: 30px; width: 100%;
+            text-align: center; pointer-events: none; z-index: 100;
+        }
+        /* Frosted glass panel for guide + button */
+        #ui-layer .glass {
+            display: inline-flex;
+            flex-direction: column;
+            gap: 14px;
+            padding: 14px 18px 18px;
+            background: rgba(10, 15, 35, 0.55);
+            border: 1px solid rgba(255, 215, 0, 0.35);
+            border-radius: 16px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.35), 0 0 30px rgba(255,215,0,0.12);
+            backdrop-filter: blur(10px);
+            pointer-events: auto;
+        }
+        
+        /* Guide text Vandiep */
+        .guide { 
+            color: rgba(255, 255, 255, 0.6); 
+            font-size: 13px; 
+            margin-bottom: 20px; 
+            text-shadow: 0 2px 4px black;
+        }
+
+        button {
+            pointer-events: auto; cursor: pointer;
+            background: linear-gradient(135deg, #ff4d6d, #b00020 60%, #ff9800);
+            color: #FFF; border: 2px solid rgba(255, 215, 0, 0.8);
+            padding: 16px 58px; border-radius: 32px; 
+            font-weight: 800; font-size: 16px; letter-spacing: 0.5px;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.35), 0 0 35px rgba(255, 87, 34, 0.4);
+            transition: transform 0.18s ease, box-shadow 0.18s ease, filter 0.18s ease;
+            animation: pulse 1.6s infinite;
+        }
+        @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.05); } 100% { transform: scale(1); } }
+        button:hover { 
+            transform: translateY(-2px) scale(1.03); 
+            box-shadow: 0 12px 32px rgba(0,0,0,0.4), 0 0 40px rgba(255, 196, 0, 0.5);
+            filter: brightness(1.05);
+        }
+        button:active { transform: translateY(0) scale(0.98); }
+
+        /* Camera Preview Vandiep */
+        #camera-preview {
+            position: absolute; top: 15px; right: 15px;
+            width: 120px; height: 90px;
+            border: 2px solid rgba(255,0,0,0.5); 
+            transform: scaleX(-1); opacity: 0.72; border-radius: 10px;
+            box-shadow: 0 6px 18px rgba(0,0,0,0.35), 0 0 18px rgba(255,0,0,0.35);
+        }
+        
+        /* Vandiep */
+        #copyright {
+            position: absolute;
+            bottom: 10px;
+            right: 15px;
+            color: rgba(255, 255, 255, 0.3);
+            font-size: 12px;
+            z-index: 100;
+            font-family: sans-serif;
+            pointer-events: none;
+            font-style: italic;
+        }
+
+        #error-log { display: none; position: absolute; top: 0; left: 0; color: red; background: rgba(0,0,0,0.8); z-index: 999; padding: 10px; }
+    </style>
+</head>
+<body>
+    <div id="error-log"></div>
+    
+    <!-- UI Vandiep -->
+    <div id="ui-layer">
+        <div class="glass">
+            <!-- Vandiep -->
+            <div class="guide">
+                🖐 <b>Open:</b> Explode &nbsp;|&nbsp; 🫶 <b>Heart:</b> Love &nbsp;|&nbsp; ✊ <b>Fist:</b> Tree
+            </div>
+            <button id="btnStart" onclick="startSystem()">START MAGIC</button>
+        </div>
+    </div>
+
+
+
+    <div id="canvas-container"></div>
+    <video class="input_video" style="display:none"></video>
+    <canvas id="camera-preview"></canvas>
+
+    <script>
+        // ==========================================
+        // 1. RESOURCES CONFIG (Babylon.js)
+        // ==========================================
+        // Resolve assets relative to current page (fixes accented-folder paths that broke textures)
+        const ASSET_BASE = new URL('.', window.location.href);
+        const MUSIC_URL = new URL('./audio.mp3', ASSET_BASE).href;
+        let bgMusic = new Audio(MUSIC_URL);
+        bgMusic.loop = true; bgMusic.volume = 1.0;
+
+        const photoFiles = [
+            './1.jpg',
+            './2.jpg',
+            './image3.jpeg',
+            './image4.jpeg',
+            './image5.jpeg'
+        ].map(f => new URL(f, ASSET_BASE).href);
+        const photoTextures = [];
+
+        // ==========================================
+        // 2. SYSTEM CONFIG
+        // ==========================================
+        const CONFIG = {
+            goldCount: 2000,
+            redCount: 300,
+            giftCount: 150,
+            explodeRadius: 65,  
+            photoOrbitRadius: 25,
+            treeHeight: 70,
+            treeBaseRadius: 35
+        };
+        // GPU saver: scale particle counts for weaker devices (hi-DPI or mobile)
+        const PARTICLE_SCALE = (window.devicePixelRatio || 1) > 1.3 ? 0.7 : 1.0;
+
+        let engine, scene, camera;
+        let groupGold, groupRed, groupGift; 
+        let snowSystem;
+        let photoMeshes = [];    
+        let titleMesh, starMesh, loveMesh;
+        let renderCanvas;
+        
+        let state = 'TREE'; 
+        let selectedIndex = 0;
+        let handX = 0.5;
+
+        // For gesture state debounce
+        let stableState = 'TREE';
+        let stateCounter = 0;
+
+        // ==========================================
+        // 3. BABYLON.JS SYSTEM
+        // ==========================================
+        function createCustomTexture(type) {
+            const dynamicTex = new BABYLON.DynamicTexture(`dyn-${type}`, { width: 128, height: 128 }, scene, false);
+            const ctx = dynamicTex.getContext();
+            const cx = 64, cy = 64;
+            ctx.clearRect(0,0,128,128);
+
+            if (type === 'gold_glow') {
+                const grd = ctx.createRadialGradient(cx, cy, 0, cx, cy, 40);
+                grd.addColorStop(0, '#FFFFFF'); 
+                grd.addColorStop(0.2, '#FFFFE0'); 
+                grd.addColorStop(0.5, '#FFD700');
+                grd.addColorStop(1, 'rgba(0,0,0,0)');
+                ctx.fillStyle = grd; ctx.fillRect(0,0,128,128);
+            } else if (type === 'red_light') {
+                const grd = ctx.createRadialGradient(cx, cy, 0, cx, cy, 50);
+                grd.addColorStop(0, '#FFAAAA'); 
+                grd.addColorStop(0.3, '#FF0000'); 
+                grd.addColorStop(1, 'rgba(0,0,0,0)');
+                ctx.fillStyle = grd; ctx.fillRect(0,0,128,128);
+            } else if (type === 'gift_red') {
+                ctx.fillStyle = '#D32F2F'; ctx.fillRect(20, 20, 88, 88);
+                ctx.fillStyle = '#FFD700'; ctx.fillRect(54, 20, 20, 88); ctx.fillRect(20, 54, 88, 20);
+                ctx.strokeStyle = "rgba(0,0,0,0.3)"; ctx.lineWidth=2; ctx.strokeRect(20,20,88,88);
+            } else if (type === 'snow_flake') {
+                ctx.save();
+                ctx.translate(cx, cy);
+                ctx.strokeStyle = '#FFFFFF';
+                ctx.lineWidth = 3;
+                for (let i = 0; i < 6; i++) {
+                    ctx.rotate(Math.PI / 3);
+                    ctx.beginPath();
+                    ctx.moveTo(0, -34);
+                    ctx.lineTo(0, 34);
+                    ctx.stroke();
+                    ctx.beginPath();
+                    ctx.moveTo(0, -20); ctx.lineTo(8, -12);
+                    ctx.moveTo(0, -20); ctx.lineTo(-8, -12);
+                    ctx.moveTo(0, 20); ctx.lineTo(8, 12);
+                    ctx.moveTo(0, 20); ctx.lineTo(-8, 12);
+                    ctx.stroke();
+                }
+                ctx.restore();
+            }
+            dynamicTex.update();
+            return dynamicTex;
+        }
+
+        const textures = {};
+
+        function init3D() {
+            const container = document.getElementById('canvas-container');
+            renderCanvas = document.createElement('canvas');
+            renderCanvas.id = 'renderCanvas';
+            renderCanvas.style.width = '100%';
+            renderCanvas.style.height = '100%';
+            container.appendChild(renderCanvas);
+
+            engine = new BABYLON.Engine(renderCanvas, true, { preserveDrawingBuffer: false, stencil: false });
+            // Lower internal resolution a bit on hi-DPI to cut GPU cost
+            const hwScale = Math.min(1.6, Math.max(1.1, (window.devicePixelRatio || 1) * 0.9));
+            engine.setHardwareScalingLevel(hwScale);
+            scene = new BABYLON.Scene(engine);
+            scene.useRightHandedSystem = true;
+            scene.clearColor = new BABYLON.Color4(0, 0, 0, 1);
+            scene.fogMode = BABYLON.Scene.FOGMODE_EXP2;
+            scene.fogDensity = 0.002;
+
+            camera = new BABYLON.FreeCamera('camera', new BABYLON.Vector3(0, 0, 150), scene);
+            camera.setTarget(BABYLON.Vector3.Zero());
+
+            const hemi = new BABYLON.HemisphericLight('hemi', new BABYLON.Vector3(0, 1, 0), scene);
+            hemi.intensity = 0.6;
+
+            // Load textures after scene exists
+            textures.gold = createCustomTexture('gold_glow');
+            textures.red = createCustomTexture('red_light');
+            textures.gift = createCustomTexture('gift_red');
+            textures.snow = createCustomTexture('snow_flake');
+
+            photoFiles.forEach((f, i) => { photoTextures[i] = new BABYLON.Texture(f, scene); });
+
+            groupGold = createParticleSystem('gold', Math.floor(CONFIG.goldCount * PARTICLE_SCALE), 2.0);
+            groupRed = createParticleSystem('red', Math.floor(CONFIG.redCount * PARTICLE_SCALE), 3.5); 
+            groupGift = createParticleSystem('gift', Math.floor(CONFIG.giftCount * PARTICLE_SCALE), 3.0); 
+            snowSystem = createSnowSystem(350);
+
+            createPhotos();
+            createDecorations();
+            startRenderLoop();
+        }
+
+        function createSnowSystem(count) {
+            const plane = BABYLON.MeshBuilder.CreatePlane('snow-plane', { size: 1 }, scene);
+            plane.isVisible = false;
+
+            const sps = new BABYLON.SolidParticleSystem('snow-sps', scene, { updatable: true });
+            sps.billboard = true;
+            sps.addShape(plane, count);
+            const mesh = sps.buildMesh();
+            mesh.alwaysSelectAsActiveMesh = true;
+            mesh.isPickable = false;
+
+            const mat = new BABYLON.StandardMaterial('snow-mat', scene);
+            mat.diffuseTexture = textures.snow;
+            mat.emissiveTexture = textures.snow;
+            mat.opacityTexture = textures.snow;
+            mat.disableLighting = true;
+            mat.backFaceCulling = false;
+            mesh.material = mat;
+
+            const AREA = 220; // phủ gần hết khung nhìn
+            sps.initParticles = () => {
+                for (let i = 0; i < count; i++) {
+                    const p = sps.particles[i];
+                    p.position.x = (Math.random() - 0.5) * AREA;
+                    p.position.y = Math.random() * 180 + 40; // cao hơn màn hình
+                    p.position.z = (Math.random() - 0.5) * AREA;
+                    p.velocity = new BABYLON.Vector3(
+                        (Math.random() - 0.5) * 0.12,
+                        -0.12 - Math.random() * 0.12, // rơi chậm hơn
+                        (Math.random() - 0.5) * 0.12
+                    );
+                    const s = 0.5 + Math.random() * 0.6;
+                    p.scale.x = p.scale.y = p.scale.z = s;
+                }
+            };
+            sps.initParticles();
+            sps.setParticles();
+
+            return { sps, mesh };
+        }
+
+        function updateSnow(time) {
+            if (!snowSystem) return;
+            const particles = snowSystem.sps.particles;
+            const AREA = 220;
+            for (let i = 0; i < particles.length; i++) {
+                const p = particles[i];
+                p.position.addInPlace(p.velocity);
+                p.position.x += Math.sin(time * 0.6 + i) * 0.02;
+                p.position.z += Math.cos(time * 0.6 + i) * 0.02;
+
+                const baseY = -120;
+                if (p.position.y < baseY) {
+                    p.position.y = 180;
+                    p.position.x = (Math.random() - 0.5) * AREA;
+                    p.position.z = (Math.random() - 0.5) * AREA;
+                }
+            }
+            snowSystem.sps.setParticles();
+        }
+
+        function createParticleSystem(type, count, size) {
+            const treeTargets = [];
+            const explodeTargets = [];
+            const heartTargets = [];
+            const phases = [];
+
+            const plane = BABYLON.MeshBuilder.CreatePlane(`${type}-plane`, { size: 1 }, scene);
+            plane.isVisible = false;
+
+            const sps = new BABYLON.SolidParticleSystem(`${type}-sps`, scene, { updatable: true });
+            sps.billboard = true;
+            sps.computeParticleColor = true;
+            sps.computeParticleTexture = true;
+            sps.addShape(plane, count);
+            const mesh = sps.buildMesh();
+            mesh.alwaysSelectAsActiveMesh = true;
+            mesh.isPickable = false;
+            mesh.rotation = new BABYLON.Vector3(0,0,0);
+            mesh.scaling = new BABYLON.Vector3(1,1,1);
+
+            const mat = new BABYLON.StandardMaterial(`${type}-mat`, scene);
+            mat.diffuseTexture = textures[type];
+            mat.emissiveTexture = textures[type];
+            mat.opacityTexture = textures[type];
+            mat.disableLighting = true;
+            mat.backFaceCulling = false;
+            mesh.material = mat;
+
+            const baseColor = (type === 'gold') ? new BABYLON.Color4(1, 0.84, 0, 1)
+                              : (type === 'red') ? new BABYLON.Color4(1, 0, 0, 1)
+                              : new BABYLON.Color4(1, 1, 1, 1);
+
+            for(let i=0; i<count; i++) {
+                // TREE
+                const h = Math.random() * CONFIG.treeHeight; 
+                const y = h - CONFIG.treeHeight / 2;
+                let radiusRatio = (type === 'gold') ? Math.sqrt(Math.random()) : 0.9 + Math.random()*0.1;
+                const maxR = (1 - (h / CONFIG.treeHeight)) * CONFIG.treeBaseRadius;
+                const r = maxR * radiusRatio; 
+                const theta = Math.random() * Math.PI * 2;
+                treeTargets.push(new BABYLON.Vector3(r * Math.cos(theta), y, r * Math.sin(theta)));
+
+                // EXPLODE
+                const u = Math.random();
+                const v = Math.random();
+                const phi = Math.acos(2 * v - 1);
+                const lam = 2 * Math.PI * u;
+                let radMult = (type === 'gift') ? 1.2 : 1.0;
+                const rad = CONFIG.explodeRadius * Math.cbrt(Math.random()) * radMult;
+                explodeTargets.push(new BABYLON.Vector3(
+                    rad * Math.sin(phi) * Math.cos(lam),
+                    rad * Math.sin(phi) * Math.sin(lam),
+                    rad * Math.cos(phi)
+                ));
+
+                // HEART
+                const tHeart = Math.random() * Math.PI * 2;
+                let hx = 16 * Math.pow(Math.sin(tHeart), 3);
+                let hy = 13 * Math.cos(tHeart) - 5 * Math.cos(2*tHeart) - 2 * Math.cos(3*tHeart) - Math.cos(4*tHeart);
+                
+                const rFill = Math.pow(Math.random(), 0.3); 
+                hx *= rFill; hy *= rFill;
+                let hz = (Math.random() - 0.5) * 8 * rFill; 
+                
+                const noise = 1.0;
+                hx += (Math.random() - 0.5) * noise;
+                hy += (Math.random() - 0.5) * noise;
+                hz += (Math.random() - 0.5) * noise;
+
+                const scaleH = 2.2;
+                heartTargets.push(new BABYLON.Vector3(hx * scaleH, hy * scaleH + 5, hz)); 
+
+                phases.push(Math.random() * Math.PI * 2);
+            }
+
+            sps.initParticles = () => {
+                for(let i=0; i<count; i++) {
+                    const p = sps.particles[i];
+                    const t = treeTargets[i];
+                    p.position.copyFrom(t);
+                    p.color = baseColor.clone();
+                    p.scale.x = p.scale.y = p.scale.z = size;
+                }
+            };
+            sps.initParticles();
+            sps.setParticles();
+
+            return {
+                sps,
+                mesh,
+                treeTargets,
+                explodeTargets,
+                heartTargets,
+                phases,
+                baseColor,
+                baseSize: size,
+                type
+            };
+        }
+
+        function createPhotos() {
+            const borderMat = new BABYLON.StandardMaterial('border-mat', scene);
+            borderMat.diffuseColor = new BABYLON.Color3(1, 0.84, 0);
+            borderMat.emissiveColor = new BABYLON.Color3(1, 0.84, 0);
+            borderMat.disableLighting = true;
+
+            for(let i=0; i<5; i++) {
+                const mat = new BABYLON.StandardMaterial(`photo-${i}-mat`, scene);
+                mat.diffuseTexture = photoTextures[i];
+                mat.emissiveTexture = photoTextures[i];
+                mat.backFaceCulling = false;
+                mat.disableLighting = true;
+
+                const mesh = BABYLON.MeshBuilder.CreatePlane(`photo-${i}`, { width: 8, height: 8 }, scene);
+                mesh.material = mat;
+
+                const border = BABYLON.MeshBuilder.CreatePlane(`photo-${i}-border`, { width: 9, height: 9 }, scene);
+                border.material = borderMat;
+                border.position.z = -0.05;
+                border.parent = mesh;
+
+                mesh.isVisible = false; 
+                mesh.scaling.setAll(0);
+                photoMeshes.push(mesh);
+            }
+        }
+
+        function createDecorations() {
+            // Title (Fix lỗi chữ MERRY CHRISTMAS bị vệt trắng gạch ngang: dùng alpha mask với rgba để vẽ nền trong suốt, không fill trắng, draw stroke sau fill, và tách context states)
+            const canvas = document.createElement('canvas');
+            canvas.width = 1024; canvas.height = 256;
+            const ctx = canvas.getContext('2d');
+            ctx.clearRect(0,0,1024,256);
+
+            // Nền trong suốt, KHÔNG fill background trắng, setups context states riêng biệt cho shadow và stroke/fill
+            ctx.save();
+            ctx.font = 'bold italic 90px Times New Roman, Arial, serif';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+
+            // Shadow cho chữ
+            ctx.shadowColor = "#FF0000";
+            ctx.shadowBlur = 40;
+            ctx.fillStyle = '#FFD700';
+            ctx.fillText("MERRY CHRISTMAS", 512, 128);
+
+            ctx.restore(); // bỏ shadow cho stroke
+
+            ctx.save();
+            ctx.font = 'bold italic 90px Times New Roman, Arial, serif';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.lineJoin = "round";
+            ctx.lineWidth = 7;
+            ctx.strokeStyle = "rgba(255,215,0,.7)"; // vàng nhạt mờ cho viền vàng lớn
+            ctx.strokeText("MERRY CHRISTMAS", 512, 128);
+            ctx.lineWidth = 3;
+            ctx.strokeStyle = "#ffffff"; // nhỏ màu trắng
+            ctx.strokeText("MERRY CHRISTMAS", 512, 128);
+            ctx.restore();
+
+            // Fix: force update of dynamic texture after drawing
+            const titleTex = new BABYLON.DynamicTexture('title-tex', canvas, scene, false, BABYLON.Texture.TRILINEAR_SAMPLINGMODE);
+            titleTex.hasAlpha = true; // Đảm bảo alpha
+            titleTex.update();
+
+            const mat = new BABYLON.StandardMaterial('title-mat', scene);
+            mat.diffuseTexture = titleTex;
+            mat.emissiveTexture = titleTex;
+            mat.opacityTexture = titleTex;
+            mat.disableLighting = true;
+            mat.backFaceCulling = false;
+            mat.alpha = 1;
+            titleMesh = BABYLON.MeshBuilder.CreatePlane('title', { width: 60, height: 15 }, scene);
+            titleMesh.material = mat;
+            titleMesh.position = new BABYLON.Vector3(0, 50, 0);
+            titleMesh.isVisible = true;
+
+            // Star (fix: ensure star texture is fully filled, and dynamic texture update is forced)
+            const starCanvas = document.createElement('canvas');
+            starCanvas.width = 128; starCanvas.height = 128;
+            const sCtx = starCanvas.getContext('2d');
+            sCtx.clearRect(0,0,128,128);
+            sCtx.save();
+            sCtx.translate(64, 64);
+            sCtx.beginPath();
+            let outer=55, inner=24;
+            for(let i=0; i<10; i++) {
+                const angle = Math.PI/5 * i - Math.PI/2;
+                const r = i%2===0?outer:inner;
+                sCtx.lineTo(Math.cos(angle)*r, Math.sin(angle)*r);
+            }
+            sCtx.closePath();
+            sCtx.shadowColor="#FFF";
+            sCtx.shadowBlur=30;
+            sCtx.fillStyle="#FFFF00";
+            sCtx.fill();
+            sCtx.restore();
+            const starTex = new BABYLON.DynamicTexture('star-tex', starCanvas, scene, false, BABYLON.Texture.TRILINEAR_SAMPLINGMODE);
+            starTex.update();
+            const starMat = new BABYLON.StandardMaterial('star-mat', scene);
+            starMat.diffuseTexture = starTex;
+            starMat.emissiveTexture = starTex;
+            starMat.opacityTexture = starTex;
+            starMat.disableLighting = true;
+            starMat.backFaceCulling = false;
+            starMesh = BABYLON.MeshBuilder.CreatePlane('star', { width: 12, height: 12 }, scene);
+            starMesh.material = starMat;
+            starMesh.position = new BABYLON.Vector3(0, CONFIG.treeHeight/2 + 6, 0); // push a bit higher for visibility
+            starMesh.isVisible = true;
+
+            // Love text
+            const loveCanvas = document.createElement('canvas');
+            loveCanvas.width = 1024; loveCanvas.height = 256;
+            const lCtx = loveCanvas.getContext('2d');
+            lCtx.clearRect(0,0,1024,256);
+            lCtx.save();
+            lCtx.font = 'bold 120px "Segoe UI", Arial, sans-serif';
+            lCtx.fillStyle = '#FF69B4'; lCtx.textAlign = 'center';
+            lCtx.shadowColor = "#FF1493"; lCtx.shadowBlur = 40; 
+            lCtx.fillText("I LOVE YOU ❤️", 512, 130);
+            lCtx.restore();
+            const loveTex = new BABYLON.DynamicTexture('love-tex', loveCanvas, scene, false, BABYLON.Texture.TRILINEAR_SAMPLINGMODE);
+            loveTex.update();
+            const loveMat = new BABYLON.StandardMaterial('love-mat', scene);
+            loveMat.diffuseTexture = loveTex;
+            loveMat.emissiveTexture = loveTex;
+            loveMat.opacityTexture = loveTex;
+            loveMat.disableLighting = true;
+            loveMat.backFaceCulling = false;
+            loveMesh = BABYLON.MeshBuilder.CreatePlane('love', { width: 70, height: 18 }, scene);
+            loveMesh.material = loveMat;
+            loveMesh.position = new BABYLON.Vector3(0, 0, 20);
+            loveMesh.isVisible = false;
+        }
+
+        function updateParticleGroup(group, targetState, speed, handRotY, time) {
+            const particles = group.sps.particles;
+            const targetKey = (targetState === 'TREE') ? 'treeTargets' : (targetState === 'HEART' ? 'heartTargets' : 'explodeTargets');
+            const targets = group[targetKey];
+            const count = particles.length;
+            const baseColor = group.baseColor;
+            const baseSize = group.baseSize;
+            const phases = group.phases;
+
+            for(let i=0; i<count; i++) {
+                const p = particles[i];
+                const t = targets[i];
+                p.position.x += (t.x - p.position.x) * speed;
+                p.position.y += (t.y - p.position.y) * speed;
+                p.position.z += (t.z - p.position.z) * speed;
+            }
+
+            if (targetState === 'TREE') {
+                group.mesh.rotation.y += 0.003;
+                group.mesh.scaling.setAll(1);
+                for(let i=0; i<count; i++) {
+                    const p = particles[i];
+                    let brightness = 1.0;
+                    if(group.type === 'red') brightness = 0.5 + 0.5 * Math.sin(time * 3 + phases[i]);
+                    else if(group.type === 'gold') brightness = 0.8 + 0.4 * Math.sin(time * 10 + phases[i]);
+                    p.color = new BABYLON.Color4(baseColor.r * brightness, baseColor.g * brightness, baseColor.b * brightness, 1);
+                    p.scale.x = p.scale.y = p.scale.z = baseSize;
+                }
+            } else if (targetState === 'HEART') {
+                group.mesh.rotation.y = 0;
+                const beatScale = 1 + Math.abs(Math.sin(time * 3)) * 0.15;
+                group.mesh.scaling.setAll(beatScale);
+                for(let i=0; i<count; i++) {
+                    const p = particles[i];
+                    p.color = baseColor.clone();
+                    p.scale.x = p.scale.y = p.scale.z = (i % 3 === 0) ? baseSize : 0.0001;
+                }
+            } else {
+                group.mesh.scaling.setAll(1);
+                group.mesh.rotation.y += (handRotY - group.mesh.rotation.y) * 0.1;
+                for(let i=0; i<count; i++) {
+                    const p = particles[i];
+                    let brightness = 1.0;
+                    if(group.type === 'gold' || group.type === 'red') {
+                        brightness = 0.8 + 0.5 * Math.sin(time * 12 + phases[i]);
+                    }
+                    p.color = new BABYLON.Color4(baseColor.r * brightness, baseColor.g * brightness, baseColor.b * brightness, 1);
+                    p.scale.x = p.scale.y = p.scale.z = baseSize;
+                }
+            }
+
+            group.sps.setParticles();
+        }
+
+        function updateScene(time) {
+            const speed = 0.08;
+            const handRotY = (handX - 0.5) * 4.0;
+
+            updateParticleGroup(groupGold, state, speed, handRotY, time);
+            updateParticleGroup(groupRed, state, speed, handRotY, time);
+            updateParticleGroup(groupGift, state, speed, handRotY, time);
+            updateSnow(time);
+
+            if (state === 'TREE') {
+                if (titleMesh) { titleMesh.isVisible = true; titleMesh.scaling = BABYLON.Vector3.Lerp(titleMesh.scaling, new BABYLON.Vector3(1,1,1), 0.1);}
+                if (starMesh) { starMesh.isVisible = true; starMesh.rotation.z -= 0.02; }
+                if (loveMesh) loveMesh.isVisible = false;
+                photoMeshes.forEach(m => { 
+                    m.isVisible = false; 
+                    m.scaling = BABYLON.Vector3.Lerp(m.scaling, new BABYLON.Vector3(0,0,0), 0.1); 
+                });
+
+            } else if (state === 'HEART') {
+                if (titleMesh) titleMesh.isVisible = false;
+                if (starMesh) starMesh.isVisible = false;
+                if (loveMesh) {
+                    loveMesh.isVisible = true;
+                    const s = 1 + Math.abs(Math.sin(time*3))*0.1;
+                    loveMesh.scaling.setAll(s);
+                }
+                photoMeshes.forEach(m => { m.isVisible = false; });
+
+            } else if (state === 'EXPLODE') {
+                if (titleMesh) titleMesh.isVisible = false;
+                if (starMesh) starMesh.isVisible = false;
+                if (loveMesh) loveMesh.isVisible = false;
+                const baseAngle = groupGold.mesh.rotation.y; 
+                const angleStep = (Math.PI * 2) / 5;
+                let bestIdx = 0; let maxZ = -999;
+                photoMeshes.forEach((mesh, i) => {
+                    mesh.isVisible = true;
+                    const angle = baseAngle + i * angleStep;
+                    const x = Math.sin(angle) * CONFIG.photoOrbitRadius;
+                    const z = Math.cos(angle) * CONFIG.photoOrbitRadius;
+                    const y = Math.sin(time + i) * 3; 
+                    mesh.position = BABYLON.Vector3.Lerp(mesh.position, new BABYLON.Vector3(x, y, z), 0.1);
+                    mesh.lookAt(camera.position);
+                    if (z > maxZ) { maxZ = z; bestIdx = i; }
+                    if (z > 5) { 
+                        const ds = 1.0 + (z/CONFIG.photoOrbitRadius)*0.8; 
+                        mesh.scaling = BABYLON.Vector3.Lerp(mesh.scaling, new BABYLON.Vector3(ds, ds, ds), 0.1);
+                    } else {
+                        mesh.scaling = BABYLON.Vector3.Lerp(mesh.scaling, new BABYLON.Vector3(0.6, 0.6, 0.6), 0.1);
+                    }
+                });
+                selectedIndex = bestIdx;
+
+            } else if (state === 'PHOTO') {
+                if (loveMesh) loveMesh.isVisible = false;
+                photoMeshes.forEach((mesh, i) => {
+                    if (i === selectedIndex) {
+                        mesh.position = BABYLON.Vector3.Lerp(mesh.position, new BABYLON.Vector3(0, 0, 60), 0.1);
+                        mesh.scaling = BABYLON.Vector3.Lerp(mesh.scaling, new BABYLON.Vector3(5, 5, 5), 0.1);
+                        mesh.lookAt(camera.position); mesh.rotation.z = 0;
+                        mesh.isVisible = true;
+                    } else {
+                        mesh.scaling = BABYLON.Vector3.Lerp(mesh.scaling, new BABYLON.Vector3(0,0,0), 0.1);
+                    }
+                });
+            }
+        }
+
+        function startRenderLoop() {
+            engine.runRenderLoop(() => {
+                const time = performance.now() * 0.001;
+                updateScene(time);
+                scene.render();
+            });
+        }
+
+function startSystem() {
+    document.getElementById('btnStart').style.display = 'none';
+    bgMusic.play().catch(e => console.log(e));
+    init3D();
+
+    const video = document.getElementsByClassName('input_video')[0];
+    const canvas = document.getElementById('camera-preview');
+    const ctx = canvas.getContext('2d');
+
+    /* ===============================
+       FIX QUAN TRỌNG CHO CAMERA PREVIEW
+       =============================== */
+    canvas.width = 120;
+    canvas.height = 90;
+
+    const hands = new Hands({
+        locateFile: (file) =>
+            `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`
+    });
+
+    hands.setOptions({
+        maxNumHands: 2,
+        modelComplexity: 1,
+        minDetectionConfidence: 0.5,
+        minTrackingConfidence: 0.5
+    });
+
+    // Debounce for heart and overall switching
+    let heartHoldFrames = 0;
+    const HEART_REQUIRED_FRAMES = 4;   // giữ đủ số frame mới vào HEART
+    const STATE_DEBOUNCE_FRAMES = 4;   // debounce chung
+
+    hands.onResults(results => {
+        /* VẼ CAMERA ĐÚNG TỈ LỆ */
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.drawImage(results.image, 0, 0, canvas.width, canvas.height);
+
+        const handCount = results.multiHandLandmarks.length;
+
+        // Thoát HEART ngay nếu không đủ 2 tay
+        if (handCount < 2 && stableState === 'HEART') {
+            heartHoldFrames = 0;
+            stableState = 'TREE';
+            state = 'TREE';
+            stateCounter = 0;
+        }
+
+        let nextState = 'TREE';
+
+        /* 1) HEART: yêu cầu 2 tay ổn định */
+        let heartDetected = false;
+        if (handCount === 2) {
+            const h1 = results.multiHandLandmarks[0];
+            const h2 = results.multiHandLandmarks[1];
+            const distIndex = Math.hypot(h1[8].x - h2[8].x, h1[8].y - h2[8].y);
+            const distThumb = Math.hypot(h1[4].x - h2[4].x, h1[4].y - h2[4].y);
+
+            if (distIndex < 0.15 && distThumb < 0.15) {
+                heartHoldFrames++;
+                if (heartHoldFrames >= HEART_REQUIRED_FRAMES) {
+                    heartDetected = true;
+                }
+            } else {
+                heartHoldFrames = 0;
+            }
+        } else {
+            heartHoldFrames = 0;
+        }
+
+        /* 2) PHOTO / TREE / EXPLODE với 1 tay (hoặc fallback) */
+        if (!heartDetected && handCount > 0) {
+            const lm = results.multiHandLandmarks[0];
+            handX = lm[9].x;
+            const wrist = lm[0];
+
+            const pinchDist = Math.hypot(lm[4].x - lm[8].x, lm[4].y - lm[8].y);
+
+            let folded = 0;
+            [8, 12, 16, 20].forEach(i => {
+                if (Math.hypot(lm[i].x - wrist.x, lm[i].y - wrist.y) < 0.22) folded++;
+            });
+            const isFist = folded >= 3;
+
+            // Thứ tự ưu tiên: HEART > PHOTO > TREE > EXPLODE
+            if (pinchDist < 0.08) {
+                nextState = 'PHOTO';
+            } else if (isFist) {
+                nextState = 'TREE';
+            } else {
+                nextState = 'EXPLODE';
+            }
+        } else if (handCount === 0) {
+            nextState = 'TREE';
+        }
+
+        if (heartDetected) nextState = 'HEART';
+
+        // Debounce chuyển state (trừ HEART đã có debounce riêng)
+        if (nextState === stableState) {
+            stateCounter = 0;
+        } else {
+            stateCounter++;
+            if (stateCounter >= STATE_DEBOUNCE_FRAMES) {
+                stableState = nextState;
+                stateCounter = 0;
+            }
+        }
+        state = stableState;
+    });
+
+    const cameraUtils = new Camera(video, {
+        onFrame: async () => {
+            await hands.send({ image: video });
+        },
+        width: 320,
+        height: 240
+    });
+
+    cameraUtils.start();
+}
+
+        window.addEventListener('resize', () => {
+            if(engine) { engine.resize(); }
+        });
+    </script>
+</body>
+</html>
